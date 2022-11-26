@@ -1,0 +1,68 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String     @id @default(cuid())
+  email           String     @unique
+  handle          String     @unique
+  provider_id     String     @unique
+  hashed_password String
+  name            String
+  avatar          String
+  banner          String
+  about           String
+  tooeats         Tooeat[]
+  liked           Liked[]
+  session         Session[]
+  following       Followed[] @relation(name: "following")
+  followers       Followed[] @relation(name: "followers")
+
+  @@map("user")
+}
+
+model Session {
+  id           String @id @unique
+  user_id      String
+  expires      BigInt
+  idle_expires BigInt
+  user         User   @relation(references: [id], fields: [user_id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@map("session")
+}
+
+model Tooeat {
+  id      Int      @id @default(autoincrement())
+  url     String
+  posted  DateTime @default(now())
+  content String
+  likes   Int      @default(0)
+  user    User     @relation(fields: [userId], references: [id])
+  userId  String
+}
+
+model Liked {
+  id       Int    @id @default(autoincrement())
+  tooeatId Int
+  user     User   @relation(fields: [userId], references: [id])
+  userId   String
+
+  @@unique([tooeatId, userId])
+}
+
+model Followed {
+  id         Int    @id @default(autoincrement())
+  followerId String
+  follower   User   @relation(name: "following", fields: [followerId], references: [id])
+  followedId String
+  followed   User   @relation(name: "followers", fields: [followedId], references: [id])
+}
